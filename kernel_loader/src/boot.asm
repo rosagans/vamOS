@@ -28,17 +28,15 @@ init_data:
     
 
 prep:
-    mov si, [N_val]
-    mov ah, 0x2
-    mov al, 1
-    mov ch, 0
+    mov esi, N
+    xor ch, ch
     mov cl, 2
-    mov dh, 0
+    xor dh, dh
     xor bx, bx
 
 
 print_loop:
-    mov ah, 0x2
+    mov ax, 0x0201
     int 0x13
     jc err_1
 
@@ -49,31 +47,22 @@ update_es:
 
 
 update_chs:
-    sub si, 512
-    cmp si, 0
-    jbe done
+    sub esi, 512
+    cmp esi, 0
+    jle done
 
-    cmp cl, 18
-    jne update_chs.inc_sector
+    inc cl
+    cmp cl, 19
+    jne print_loop
+
     mov cl, 1
+    xor dh, 1
+    jnz print_loop
 
-    test dh, dh
-    jz update_chs.inc_header
-    xor dh, dh
-
-    cmp ch, 79
-    je err_2
     inc ch
+    cmp ch, 80
+    je err_2
     jmp print_loop
-
-    .inc_header:
-        inc dh
-        jmp print_loop
-
-    .inc_sector:
-        inc cl
-        jmp print_loop
-
 
 
 
@@ -81,28 +70,23 @@ update_chs:
 
 err_1:
     mov bx, msg_1
-    .loop:
-        mov al, byte [bx]
-        cmp al, 0
-        je done
-        mov ah, 0x0E
-        int 0x10
-        inc bx
-        jmp err_1.loop
+    jmp print_err
 
 
 
 err_2:
     mov bx, msg_2
-    .loop:
-        mov al, byte [bx]
-        cmp al, 0
-        je done
-        mov ah, 0x0E
-        int 0x10
-        inc bx
-        jmp err_2.loop
 
+
+print_err:
+    mov al, byte [bx]
+    test al, al
+    je done
+    mov ah, 0x0E
+    xor bh, bh
+    int 0x10
+    inc bx
+    jmp print_err
 
 
 done:
@@ -113,11 +97,6 @@ msg_1: db "Carry flag is set", 0x0A, 0x0D, 0x0
 
 msg_2: db "Max cylinder is 79. Cant access 80", 0x0A, 0x0D, 0x0
 
-%ifdef N
-    N_val: dw N
-%else
-    N_val: dw 512   
-%endif
 
 
 times 510-($-$$) db 0
