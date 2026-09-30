@@ -9,6 +9,8 @@
 ; qemu-system-i386 -cpu pentium2 -m 1g -fda boot.img -monitor stdio -device VGA (запуск эмулятора)
 
 
+SECTORS_TO_READ equ (N + 511) / 512
+
 
 [BITS 16]
 
@@ -28,7 +30,7 @@ init_data:
     
 
 prep:
-    mov esi, N
+    mov si, SECTORS_TO_READ
     xor ch, ch
     mov cl, 2
     xor dh, dh
@@ -47,7 +49,7 @@ update_es:
 
 
 update_chs:
-    sub esi, 512
+    dec si
     cmp esi, 0
     jle done
 
@@ -69,23 +71,23 @@ update_chs:
 
 
 err_1:
-    mov bx, msg_1
+    mov si, msg_1
     jmp print_err
 
 
 
 err_2:
-    mov bx, msg_2
+    mov si, msg_2
 
 
 print_err:
-    mov al, byte [bx]
+    mov al, byte [si]
     test al, al
     je done
     mov ah, 0x0E
     xor bh, bh
     int 0x10
-    inc bx
+    inc si
     jmp print_err
 
 
